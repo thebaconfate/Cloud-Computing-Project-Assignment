@@ -1,0 +1,16 @@
+[submodule "client-gateway"]
+	path = client-gateway
+	url = git@github.com:thebaconfate/Cloud-Computing-Project-Assignment-Client-Gateway.git
+	branch = main
+[submodule "order-manager"]
+	path = order-manager
+	url = git@github.com:thebaconfate/Cloud-Computing-Project-Assignment-Order-Manager.git
+	branch = main
+[submodule "market-data-publisher"]
+	path = market-data-publisher
+	url = git@github.com:thebaconfate/Cloud-Computing-Project-Assignment-Market-Data-Publisher.git
+	branch = main
+[submodule "exchange-dashboard"]
+	path = exchange-dashboard
+	url = git@github.com:thebaconfate/Cloud-Computing-Project-Assignment-Exchange-Dashboard.git
+	branch = main
