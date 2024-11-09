@@ -76,5 +76,4 @@ fs.readdir(CSVDir, (err, files) => {
     processFileContents(path.join(CSVDir, files[1]), (line) => send(line));
   }
 });
-console.error(e);
 
