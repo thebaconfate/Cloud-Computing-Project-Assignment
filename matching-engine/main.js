@@ -1,4 +1,5 @@
 const Heap = require("heap");
+
 /* Creates a dictionary of two heaps, sorted by price. One ascending and the
  * other descending
  */
@@ -35,6 +36,7 @@ class EngineOrder {
     this.secnum = secnum;
   }
 }
+
 /**
  * @class Orderbook
  */
@@ -56,12 +58,10 @@ class OrderBook {
  * This class implements the matching algorithm
  * It takes the array of stocks supported by the market and maintains a book for each symbol.
  * Currently only for symbols are traded in the dataset.
- * Therefore you should instantaiate with those symbols => ['AAPL', 'GOOG', 'MSFT', 'AMZN']
- */
-/**
+ * Therefore you should instantaiate with those symbols => ['AAPL', 'GOOGL', 'MSFT', 'AMZN']
  * MatchingEngine
  * @class
- * */
+ */
 class MatchingEngine {
   constructor(symbols = []) {
     this.symbols = symbols;
@@ -71,26 +71,23 @@ class MatchingEngine {
   /**
    * This function takes and order and try to match it against the order book of the order's symbol.
    * The execution handler is a function that will process the two set of executions if the order is matched.
-   * @param {EngineOrder} order
-   * @param {Function} executionHandler
+   * @param {EngineOrder} order - the new order that has to be executed
+   * @param {Function} executionHandler the callback function that is called once an order has been executed
    */
   execute(order = new EngineOrder(), executionHandler) {
     let current_book = this.symbol_order_book.symbol_order_book_map.get(
       order.symbol,
     );
 
-    if (order.side === "bids") {
+    if (order.side === "bid") {
       //bids
-      if (
-        current_book.bids.size() > 0 &&
-        order.price < current_book.bids.top().price_level
-      ) {
+      if (order.price < current_book.bids.top()?.price_level) {
         //Adding the order to the book for matching later cause it has a low bid price wrt current biggest bid
         current_book.bids.push({ price_level: order.price, order: order });
       } else {
-        //we can match the order cause there are order cheaper then the bidding price.
+        //we can match the order cause there are orders cheaper then the bidding price.
         // const matched_elements = this._match(order, this.symbol_order_book);
-        const matched_elements = this._matchBid(order, this.current_book.asks);
+        const matched_elements = this._matchBid(order, current_book.asks);
 
         if (matched_elements.remaining_qtty > 0) {
           // the quantinty needed by the bidder was insufficient by the asking price volume.
@@ -104,10 +101,7 @@ class MatchingEngine {
       }
     } else {
       //asks
-      if (
-        current_book.asks.size() > 0 &&
-        order.price > current_book.asks.top().price_level
-      ) {
+      if (order.price > current_book.asks.top()?.price_level) {
         //Adding the order to the book for matching later cause it has a high ask price wrt current higher ask
         current_book.asks.push({ price_level: order.price, order: order });
       } else {
@@ -117,7 +111,7 @@ class MatchingEngine {
         if (matched_elements.remaining_qtty > 0) {
           // the quantinty needed by the bidder was sufficient by the asking price volume.
           order.quantity = matched_elements.remaining_qtty;
-          current_book.bids.push({ price_level: order.price, order: order });
+          current_book.asks.push({ price_level: order.price, order: order });
         }
         executionHandler(
           matched_elements.ask_executions,
@@ -125,58 +119,6 @@ class MatchingEngine {
         );
       }
     }
-  }
-
-  _match(order = new EngineOrder(), symbol_order_book = new OrderBook()) {
-    let order_amount = order.quantity;
-    let order_price = order.price;
-    let side = order.side; //asks or bids
-    let symbol_book = symbol_order_book.symbol_order_book_map.get(order.symbol);
-    let symbol_heap = side === "bid" ? symbol_book.asks : symbol_book.bids;
-    const ask_executions = [];
-    const bid_executions = [];
-
-    while (order_amount > 0 && order_price >= symbol_heap.top()?.price_level) {
-      let match = symbol_heap.top();
-      let rem_amount = match.order.quantity - order_amount;
-
-      if (rem_amount >= 0) {
-        match.order.quantity = rem_amount;
-        let match_clone = { ...match.order };
-        match_clone.quantity = order_amount;
-        if (side === "bid") {
-          ask_executions.push(match_clone);
-          bid_executions.push(order);
-        } else {
-          ask_executions.push(order);
-          bid_executions.push(match_clone);
-        }
-      } else {
-        if (side === "bid") {
-          ask_executions.push(symbol_heap.pop().order);
-        } else {
-          bid_executions.push(symbol_heap.pop().order);
-        }
-      }
-
-      if (rem_amount < 0) {
-        order_amount = Math.abs(rem_amount);
-      } else {
-        break;
-      }
-    }
-
-    if (order.quantity - order_amount > 0) {
-      let order_clone = { ...order };
-      order_clone.quantity = order.quantity - order_amount;
-      if (side === "bid") {
-        bid_executions.push(order_clone);
-      } else {
-        ask_executions.push(order_clone);
-      }
-    }
-
-    return { remaining_qtty: order_amount, ask_executions, bid_executions };
   }
 
   _matchBid(bid_order = new EngineOrder(), symbol_asks_heap = new Heap()) {
@@ -253,3 +195,4 @@ class MatchingEngine {
 }
 
 module.exports = { MatchingEngine, EngineOrder };
+
