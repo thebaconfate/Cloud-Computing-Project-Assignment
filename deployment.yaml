@@ -1,0 +1,6 @@
+apiVersion: cloud-computing/v1
+kind: Deployment
+metadata:
+  name: cloud-computing-project-deployment
+  labels:
+

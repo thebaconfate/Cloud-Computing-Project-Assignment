@@ -1,3 +1,5 @@
+name: cc-project
+
 services:
   client-gateway:
     build:
