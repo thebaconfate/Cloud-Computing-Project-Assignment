@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  client-gateway:
+    build:
+      context: ./client-gateway
+    container_name: client-gateway
+    ports:
+      - "3000:3000"
+    networks:
+      - network
+
+  order-manager:
+    build:
+      context: ./order-manager
+    container_name: order-manager
+    ports:
+      - "3001:3000"
+    networks:
+      - network
+
+networks:
+  network:
+   driver: bridge
