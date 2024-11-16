@@ -8,17 +8,18 @@ metadata:
 spec:
   replicas: 3
   selector:
-  matchLabels:
-    app: cc-project-client-gateway
+    matchLabels:
+      app: cc-project-client-gateway
   template:
     metadata:
       labels:
         app: cc-project-client-gateway
     spec:
-      - name: client-gateway-container
-        image: cc-project-client-gateway:latest
-        ports:
-         -  containerPort: 3000
+      containers:
+        - name: client-gateway-container
+          image: cc-project-client-gateway:latest
+          ports:
+            -  containerPort: 3000
 ---
 # Load balancer for client gateway
 apiVersion: v1
@@ -31,5 +32,5 @@ spec:
   ports:
     - protocol: TCP
       port: 3000
-      containerPort: 3000
+      targetPort: 3000
   type: LoadBalancer
