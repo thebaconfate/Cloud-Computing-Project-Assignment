@@ -1,6 +1,35 @@
-apiVersion: cloud-computing/v1
+# Client gateway manifest
+apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: cloud-computing-project-deployment
+  name: cc-project-client-gateway-deployment
   labels:
-
+    app: client-gateway
+spec:
+  replicas: 3
+  selector:
+  matchLabels:
+    app: cc-project-client-gateway
+  template:
+    metadata:
+      labels:
+        app: cc-project-client-gateway
+    spec:
+      - name: client-gateway-container
+        image: cc-project-client-gateway:latest
+        ports:
+         -  containerPort: 3000
+---
+# Load balancer for client gateway
+apiVersion: v1
+kind: Service
+metadata:
+  name: cc-project-client-gateway-load-balancer
+spec:
+  selector:
+    app: cc-project-client-gateway
+  ports:
+    - protocol: TCP
+      port: 3000
+      containerPort: 3000
+  type: LoadBalancer
