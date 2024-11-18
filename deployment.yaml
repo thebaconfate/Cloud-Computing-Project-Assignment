@@ -42,3 +42,39 @@ spec:
       port: 3000
       targetPort: 3000
   type: LoadBalancer
+
+---
+# Order manager manifest
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cc-project-order-manager-deployment
+  labels:
+    app: order-manager
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: order-manager
+  template:
+    metadata:
+      labels:
+        app: order-manager
+    spec:
+      containers:
+        - name: order-manager
+          image: cc-project-order-manager:latest
+          ports:
+            -  containerPort: 3000
+          imagePullPolicy: Never  # Use this for local images
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+---
+# Order manager service
+
