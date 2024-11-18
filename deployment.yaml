@@ -9,17 +9,25 @@ spec:
   replicas: 3
   selector:
     matchLabels:
-      app: cc-project-client-gateway
+      app: client-gateway
   template:
     metadata:
       labels:
-        app: cc-project-client-gateway
+        app: client-gateway
     spec:
       containers:
-        - name: client-gateway-container
+        - name: client-gateway
           image: cc-project-client-gateway:latest
           ports:
             -  containerPort: 3000
+          imagePullPolicy: Never  # Use this for local images
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
 ---
 # Load balancer for client gateway
 apiVersion: v1
@@ -28,7 +36,7 @@ metadata:
   name: cc-project-client-gateway-load-balancer
 spec:
   selector:
-    app: cc-project-client-gateway
+    app: client-gateway
   ports:
     - protocol: TCP
       port: 3000
