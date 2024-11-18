@@ -2,13 +2,18 @@ const assert = require("assert");
 const fs = require("fs");
 const split2 = require("split2");
 const path = require("path");
+const http = require("http");
+
+const agent = new http.Agent({
+  keepAlive: true,
+});
 
 /**
  * This file reads from the recorder client orders and emits requests to the specified endpoint
  **/
 
 //TODO: You must adapt these to your own setting!
-const end_host = "127.0.0.1";
+const end_host = "localhost";
 const end_port = "3000";
 const end_path = "";
 
@@ -61,7 +66,8 @@ function send(order_line) {
     body: JSON.stringify(json_order),
     headers: { "Content-Type": "application/json" },
     keepalive: true,
-  });
+    agent: agent,
+  }).catch((e) => console.log(e));
 }
 
 const CSVDir = path.join(__dirname, "../order_datasets");
