@@ -67,6 +67,13 @@ spec:
           volumeMounts:
               - mountPath: /var/lib/mysql
                 name: order-manager-db-storage
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"
       volumes:
           - name: order-manager-db-storage
             persistentVolumeClaim:

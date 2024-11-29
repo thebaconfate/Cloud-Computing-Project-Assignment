@@ -8,17 +8,17 @@ spec:
     kind: Deployment
     name: cc-project-client-gateway-deployment
   minReplicas: 3
-  maxReplicas: 10
+  maxReplicas: 6
   metrics:
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 50
+          averageUtilization: 75
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilization: 50
+          averageUtilization: 75

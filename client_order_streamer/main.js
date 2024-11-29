@@ -13,7 +13,7 @@ const agent = new http.Agent({
  **/
 
 //TODO: You must adapt these to your own setting!
-const end_host = "localhost";
+const end_host = "127.0.0.1";
 const end_port = "3000";
 const end_path = "";
 

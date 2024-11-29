@@ -1,0 +1,46 @@
+# Client gateway manifest
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cc-project-client-gateway-deployment
+  labels:
+    app: client-gateway
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: client-gateway
+  template:
+    metadata:
+      labels:
+        app: client-gateway
+    spec:
+      containers:
+        - name: client-gateway
+          image: cc-project-client-gateway:latest
+          ports:
+            -  containerPort: 3000
+          imagePullPolicy: Never  # Use this for local images
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+# Load balancer for client gateway
+apiVersion: v1
+kind: Service
+metadata:
+  name: client-gateway-load-balancer
+spec:
+  selector:
+    app: client-gateway
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+  type: LoadBalancer
+
+
