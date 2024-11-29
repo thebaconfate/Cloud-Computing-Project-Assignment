@@ -1,0 +1,101 @@
+# Volume for order manager db
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: order-manager-db-pv
+spec:
+  capacity:
+    storage: 3Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data/mysql"
+---
+# Volume claim for order manager db
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: order-manager-db-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 3Gi
+---
+# secrets for order manager DB
+apiVersion: v1
+kind: Secret
+metadata:
+  name: order-manager-db-secret
+type: Opaque
+data:
+  MYSQL_ROOT_PASSWORD: cm9vdAo=
+  MYSQL_PASSWORD: cm9vdAo=
+  MYSQL_USER: cm9vdAo=
+  MYSQL_DATABASE: b3JkZXJfbWFuYWdlcl9kYgo=
+---
+# Deployment manifest
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-manager-db-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-manager-db-deployment
+  template:
+    metadata:
+      labels:
+        app: order-manager-db-deployment
+    spec:
+      containers:
+        - name: order-manager-db-deployment
+          image: mysql:8.0
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: order-manager-db-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: order-manager-db-secret
+                  key:  MYSQL_PASSWORD
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: order-manager-db-secret
+                  key: MYSQL_USER
+            - name: MYSQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: order-manager-db-secret
+                  key: MYSQL_DATABASE
+          volumeMounts:
+              - mountPath: order-manager-db-storage
+                name: /var/lib/mysql/order-manager
+      volumes:
+          - name: order-manager-db-storage
+            persistentVolumeClaim:
+              claimName: order-manager-db-pvc
+---
+# Service manifest of the database
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-manager-db
+spec:
+  ports:
+  - port: 3306
+    targetPort: 3306
+  selector:
+    app: order-manager-db-deployment
+  type: ClusterIP
+
+
+
