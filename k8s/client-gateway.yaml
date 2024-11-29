@@ -23,11 +23,11 @@ spec:
           imagePullPolicy: Never  # Use this for local images
           resources:
             requests:
-              cpu: "200m"
-              memory: "256Mi"
+              cpu: 200m
+              memory: 256Mi
             limits:
-              cpu: "500m"
-              memory: "512Mi"
+              cpu: 500m
+              memory: 512Mi
 ---
 # Load balancer for client gateway
 apiVersion: v1

@@ -36,7 +36,7 @@ services:
       - DB_DATABASE=${ORDER_MANAGER_DB_DATABASE}
       - DB_HOST=${ORDER_MANAGER_DB_HOST}
     ports:
-      - "3001:3000"
+      - "3000:3000"
     networks:
       - network
 
