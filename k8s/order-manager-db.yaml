@@ -30,10 +30,8 @@ metadata:
   name: order-manager-db-secret
 type: Opaque
 data:
-  MYSQL_ROOT_PASSWORD: cm9vdAo=
-  MYSQL_PASSWORD: cm9vdAo=
-  MYSQL_USER: cm9vdAo=
-  MYSQL_DATABASE: b3JkZXJfbWFuYWdlcl9kYgo=
+  MYSQL_ROOT_PASSWORD: cm9vdA==
+  MYSQL_DATABASE: b3JkZXJfbWFuYWdlcl9kYg==
 ---
 # Deployment manifest
 apiVersion: apps/v1
@@ -61,24 +59,14 @@ spec:
                 secretKeyRef:
                   name: order-manager-db-secret
                   key: MYSQL_ROOT_PASSWORD
-            - name: MYSQL_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: order-manager-db-secret
-                  key:  MYSQL_PASSWORD
-            - name: MYSQL_USER
-              valueFrom:
-                secretKeyRef:
-                  name: order-manager-db-secret
-                  key: MYSQL_USER
             - name: MYSQL_DATABASE
               valueFrom:
                 secretKeyRef:
                   name: order-manager-db-secret
                   key: MYSQL_DATABASE
           volumeMounts:
-              - mountPath: order-manager-db-storage
-                name: /var/lib/mysql/order-manager
+              - mountPath: /var/lib/mysql
+                name: order-manager-db-storage
       volumes:
           - name: order-manager-db-storage
             persistentVolumeClaim:

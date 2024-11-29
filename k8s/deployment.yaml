@@ -44,6 +44,16 @@ spec:
   type: LoadBalancer
 
 ---
+# Order manager secrets
+apiVersion: v1
+kind: Secret
+metadata:
+  name: order-manager-secret
+type: opaque
+data:
+  password: cm9vdA==
+  database: b3JkZXJfbWFuYWdlcl9kYg==
+---
 # Order manager manifest
 apiVersion: apps/v1
 kind: Deployment
@@ -66,6 +76,23 @@ spec:
           image: cc-project-order-manager:latest
           ports:
             -  containerPort: 3000
+          env:
+            - name: DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: order-manager-secret
+                  key: database
+            - name: DB_HOST
+              value: "order-manager-db"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: order-manager-secret
+                  key: password
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_USER
+              value: "root"
           imagePullPolicy: Never  # Use this for local images
           resources:
             requests:
