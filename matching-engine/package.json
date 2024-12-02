@@ -9,6 +9,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "heap": "^0.2.7"
+    "fastify": "^5.1.0",
+    "heap": "^0.2.7",
+    "mysql2": "^3.11.5"
   }
 }
