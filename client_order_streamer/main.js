@@ -52,6 +52,11 @@ function parseLine(line) {
   };
 }
 
+function sleepSync(ms) {
+  const start = Date.now();
+  while (Date.now() - start < ms) {}
+}
+
 /**
  *
  * This function makes a POST request the configured end_url.
