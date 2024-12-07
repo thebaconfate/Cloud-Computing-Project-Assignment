@@ -1,0 +1,247 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cc-project-matching-engine-aapl
+  labels:
+    app: matching-engine-aapl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: matching-engine-aapl
+  template:
+    metadata:
+      labels:
+        app: matching-engine-aapl
+    spec:
+      containers:
+        - name: matching-engine-aapl
+          image: cc-project-matching-engine:latest
+          ports:
+            -  containerPort: 3000
+          env:
+            - name: DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_DATABASE
+            - name: DB_HOST
+              value: "mysql"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_USER
+              value: "root"
+            - name: SYMBOL
+              value: "AAPL"
+          imagePullPolicy: Never  # Use this for local images
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: matching-engine-aapl
+spec:
+  selector:
+    app: matching-engine-aapl
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cc-project-matching-engine-amzn
+  labels:
+    app: matching-engine-amzn
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: matching-engine-amzn
+  template:
+    metadata:
+      labels:
+        app: matching-engine-amzn
+    spec:
+      containers:
+        - name: matching-engine-amzn
+          image: cc-project-matching-engine:latest
+          ports:
+            -  containerPort: 3000
+          env:
+            - name: DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_DATABASE
+            - name: DB_HOST
+              value: "mysql"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_USER
+              value: "root"
+            - name: SYMBOL
+              value: "AMZN"
+          imagePullPolicy: Never  # Use this for local images
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: matching-engine-amzn
+spec:
+  selector:
+    app: matching-engine-amzn
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cc-project-matching-engine-msft
+  labels:
+    app: matching-engine-msft
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: matching-engine-msft
+  template:
+    metadata:
+      labels:
+        app: matching-engine-msft
+    spec:
+      containers:
+        - name: matching-engine-msft
+          image: cc-project-matching-engine:latest
+          ports:
+            -  containerPort: 3000
+          env:
+            - name: DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_DATABASE
+            - name: DB_HOST
+              value: "mysql"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_USER
+              value: "root"
+            - name: SYMBOL
+              value: "MSFT"
+          imagePullPolicy: Never  # Use this for local images
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: matching-engine-msft
+spec:
+  selector:
+    app: matching-engine-msft
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cc-project-matching-engine-googl
+  labels:
+    app: matching-engine-googl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: matching-engine-googl
+  template:
+    metadata:
+      labels:
+        app: matching-engine-googl
+    spec:
+      containers:
+        - name: matching-engine-googl
+          image: cc-project-matching-engine:latest
+          ports:
+            -  containerPort: 3000
+          env:
+            - name: DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_DATABASE
+            - name: DB_HOST
+              value: "mysql"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_USER
+              value: "root"
+            - name: SYMBOL
+              value: "GOOGL"
+          imagePullPolicy: Never  # Use this for local images
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: matching-engine-googl
+spec:
+  selector:
+    app: matching-engine-googl
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+  type: ClusterIP
