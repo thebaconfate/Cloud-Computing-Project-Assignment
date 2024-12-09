@@ -14,10 +14,12 @@ Object.entries(dbCredentials).some((credential) => {
   if (!credential[1]) throw new Error(`Undefined credential ${credential[0]}`);
 });
 
-const SYMBOL = process.env.SYMBOL;
-if (!SYMBOL) throw new Error("No symbol declared for the engine");
-
 const pool = mysql.createPool(dbCredentials);
+
+const orderManagerHost = "order-manager";
+const orderManagerPort = 3000;
+const orderManagerPath = "order-fill";
+const orderManagerUrl = `http://${orderManagerHost}:${orderManagerPort}/${orderManagerPath}`;
 
 async function restoreEngine() {
   const query =
@@ -32,9 +34,9 @@ async function restoreEngine() {
     ].join(", ") +
     " " +
     "FROM orders LEFT JOIN executions ON orders.secnum = executions.secnum " +
-    "WHERE orders.filled = FALSE AND orders.symbol = ? " +
+    "WHERE orders.filled = FALSE " +
     "GROUP BY orders.secnum";
-  const [rows] = await pool.query(query, [SYMBOL]);
+  const [rows] = await pool.query(query);
   return rows;
 }
 
@@ -76,21 +78,30 @@ async function handleExecutions(asks, bids) {
 }
 
 const fastify = Fastify();
-const engine = new MatchingEngine([SYMBOL]);
+const symbols = ["AAPL", "AMZN", "MSFT", "GOOGL"];
+const engine = new MatchingEngine(symbols);
 const orderSet = new Set();
 
-function removeFromSet(top, array) {
+function removeFromSet(topSet, array) {
   array.forEach((val) => {
-    if (!top || top.secnum != val.secnum) orderSet.delete(val.secnum);
+    if (!topSet.has(val.secnum)) orderSet.delete(val.secnum);
   });
 }
-let restoredAsks = [];
-let restoredBids = [];
 
-fastify.post("/", async (request, replyTo) => {
+function getTops() {
+  const orderbookMap = engine.symbol_order_book.symbol_order_book_map;
+  return symbols.reduce((prev, next) => {
+    const orderBook = orderbookMap.get(next);
+    if (orderBook.asks.top()) prev.add(orderBook.asks.top().secnum);
+    if (orderBook.bids.top()) prev.add(orderBook.bids.top().secnum);
+    return prev;
+  }, new Set());
+}
+let restoredAsks = null;
+let restoredBids = null;
+
+fastify.post("/order", async (request, reply) => {
   const rawOrder = request.body;
-  console.log("received request");
-  console.log(rawOrder);
   const order = new EngineOrder(
     rawOrder.symbol,
     rawOrder.side,
@@ -98,42 +109,48 @@ fastify.post("/", async (request, replyTo) => {
     rawOrder.quantity,
     rawOrder.secnum,
   );
-  const orderBook = engine.symbol_order_book.symbol_order_book_map.get(SYMBOL);
+  const headers = { "Content-Type": "application/json" };
+  const method = "POST";
   // handle if order is already in the engine
   if (orderSet.has(order.secnum)) {
     // if the engine was recently restored we need to return those executions too
     if (restoredAsks || restoredBids) {
+      // need to create a copy due to it being used in a callback funtion
       const asksCopy = restoredAsks;
       const bidsCopy = restoredBids;
+      // point the restored execs to null so the main thread doesn't use it again
       restoredBids = null;
       restoredAsks = null;
-      const askTop = orderBook.asks.top();
-      const bidTop = orderBook.bids.top();
-      handleExecutions(asksCopy, bidsCopy).then(() => {
-        removeFromSet(askTop, asksCopy);
-        removeFromSet(bidTop, bidsCopy);
-        replyTo.status(209).send(asksCopy.concat(bidsCopy));
+      const topSet = getTops();
+      await handleExecutions(asksCopy, bidsCopy);
+      removeFromSet(topSet, asksCopy);
+      removeFromSet(topSet, bidsCopy);
+      fetch(orderManagerUrl, {
+        method: method,
+        body: JSON.stringify(asksCopy.concat(bidsCopy)),
+        headers: headers,
+      }).catch((e) => {
+        console.error(e);
       });
-      // else just return empty array, since no executions to return
-    } else replyTo.status(209).send([]);
+    }
+    // else just return empty array, since no executions to return
   } else {
     // if the order has not yet been placed
     orderSet.add(order.secnum);
     // if the engine was recently restored
     if (restoredAsks || restoredBids) {
-      const savedAskTop = orderBook.asks.top();
-      const savedBidTop = orderBook.bids.top();
+      const savedTopSet = getTops();
       engine.execute(order, (asks, bids) => {
         const toRemoveSecnums = restoredAsks
           .reduce((prev, next) => {
-            if (savedAskTop !== next.secnum) {
+            if (!savedTopSet.has(next.secnum)) {
               prev.push(next.secnum);
             }
             return prev;
           }, [])
           .concat(
             restoredBids.reduce((prev, next) => {
-              if (savedBidTop !== next.secnum) {
+              if (!savedTopSet.has(next.secnum)) {
                 prev.push(next.secnum);
               }
               return prev;
@@ -143,27 +160,37 @@ fastify.post("/", async (request, replyTo) => {
         const totalBids = bids.concat(restoredBids);
         restoredAsks = null;
         restoredBids = null;
-        const askTop = orderBook.asks.top();
-        const bidTop = orderBook.bids.top();
+        const topSet = getTops();
         handleExecutions(totalAsks, totalBids).then(() => {
           toRemoveSecnums.forEach((secnum) => orderSet.delete(secnum));
-          removeFromSet(askTop, asks);
-          removeFromSet(bidTop, bids);
-          replyTo.status(201).send(totalAsks.concat(totalBids));
+          removeFromSet(topSet, asks);
+          removeFromSet(topSet, bids);
+          fetch(orderManagerUrl, {
+            method: method,
+            body: JSON.stringify(totalAsks.concat(totalBids)),
+            headers: headers,
+          }).catch((e) => {
+            console.error(e);
+          });
         });
       });
       // if engine wasn't restored recently
     } else {
       engine.execute(order, (asks, bids) => {
-        const askTop = orderBook.asks.top();
-        const bidTop = orderBook.bids.top();
+        const topSet = getTops();
         if (asks.length === 0 && bids.length === 0) {
-          replyTo.status(200).send([]);
+          return;
         } else {
           handleExecutions(asks, bids).then(() => {
-            removeFromSet(askTop, asks);
-            removeFromSet(bidTop, bids);
-            replyTo.status(201).send(asks.concat(bids));
+            removeFromSet(topSet, asks);
+            removeFromSet(topSet, bids);
+            fetch(orderManagerUrl, {
+              method: method,
+              body: JSON.stringify(asks.concat(bids)),
+              headers: headers,
+            }).catch((e) => {
+              console.error(e);
+            });
           });
         }
       });
@@ -171,8 +198,8 @@ fastify.post("/", async (request, replyTo) => {
   }
 });
 
-fastify.get("/", async (_, replyTo) => {
-  replyTo.status(200).send("Engine available");
+fastify.get("/", async (_, reply) => {
+  return reply.code(201).send("Engine available");
 });
 
 fastify.listen({ port: 3000, host: "0.0.0.0" }, (err, addr) => {
@@ -181,22 +208,39 @@ fastify.listen({ port: 3000, host: "0.0.0.0" }, (err, addr) => {
     process.exit(1);
   } else {
     console.log(`Server listening on port: ${addr}`);
-    restoreEngine().then((placedOrders) => {
-      placedOrders.forEach((placedOrder) => {
-        engine.execute(placedOrder, (asks, bids) => {
-          if (asks.length === 0 && bids.length === 0) {
-            restoredAsks = null;
-            restoredBids = null;
-            return;
-          } else if (!restoredAsks || !restoredBids) {
-            restoredBids = bids;
-            restoredAsks = asks;
-          } else {
-            restoredAsks = restoredAsks.concat(asks);
-            restoredBids = restoredBids.concat(bids);
-          }
+    restoreEngine()
+      .then((placedOrders) => {
+        placedOrders.forEach((placedOrder) => {
+          engine.execute(placedOrder, (asks, bids) => {
+            if (asks.length === 0 && bids.length === 0) {
+              return;
+            } else if (!restoredAsks || !restoredBids) {
+              restoredBids = bids;
+              restoredAsks = asks;
+            } else {
+              restoredAsks = restoredAsks.concat(asks);
+              restoredBids = restoredBids.concat(bids);
+            }
+          });
         });
+      })
+      .then(() => {
+        if (restoredBids || restoredAsks) {
+          fetch(orderManagerUrl, {
+            body: JSON.stringify(restoredAsks.concat(restoredBids)),
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          })
+            .then((response) => {
+              if (response.ok) {
+                restoredAsks = null;
+                restoredBids = null;
+              }
+            })
+            .catch((e) => {
+              console.error(e);
+            });
+        }
       });
-    });
   }
 });
