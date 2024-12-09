@@ -16,6 +16,7 @@ const agent = new http.Agent({
 const end_host = "127.0.0.1";
 const end_port = "3000";
 const end_path = "";
+const requestsPerSecond = 2;
 
 const endpoint_url = `http://${end_host}:${end_port}/${end_path}`;
 
@@ -29,8 +30,17 @@ function processFileContents(cvs_filepath, record_handler) {
   const order_stream = fs
     .createReadStream(cvs_filepath, { encoding: "utf-8", start: 0 })
     .pipe(split2());
-  order_stream.on("data", (line) => {
+
+  const processLineWithDelay = (line) => {
     record_handler(line);
+    setTimeout(() => {
+      order_stream.resume();
+    }, 1000 / requestsPerSecond);
+  };
+
+  order_stream.on("data", (line) => {
+    order_stream.pause();
+    processLineWithDelay(line);
   });
 }
 
@@ -52,11 +62,6 @@ function parseLine(line) {
   };
 }
 
-function sleepSync(ms) {
-  const start = Date.now();
-  while (Date.now() - start < ms) {}
-}
-
 /**
  *
  * This function makes a POST request the configured end_url.
@@ -72,7 +77,9 @@ function send(order_line) {
     headers: { "Content-Type": "application/json" },
     keepalive: true,
     agent: agent,
-  }).catch((e) => console.log(e));
+  })
+    .then((_) => console.log(`Sent ${json_order}`))
+    .catch((e) => console.error(e));
 }
 
 const CSVDir = path.join(__dirname, "../order_datasets");

@@ -16,9 +16,6 @@ services:
     image: mysql:8.0
     container_name: cc-project-mysql
     restart: always # change this to on-failure
-    environment:
-      - MYSQL_ROOT_PASSWORD=${ORDER_MANAGER_DB_PASSWORD}
-      - MYSQL_DATABASE=${ORDER_MANAGER_DB_DATABASE}
     volumes:
       - mysql-volume:/var/lib/mysql  # Persist database data
     ports:
@@ -30,12 +27,6 @@ services:
     container_name: order-manager
     depends_on:
       - mysql
-    environment:
-      - DB_USER=${ORDER_MANAGER_DB_USER}
-      - DB_PORT=${ORDER_MANAGER_DB_PORT}
-      - DB_PASSWORD=${ORDER_MANAGER_DB_PASSWORD}
-      - DB_DATABASE=${ORDER_MANAGER_DB_DATABASE}
-      - DB_HOST=${ORDER_MANAGER_DB_HOST}
     ports:
       - "3000:3000"
     networks:
@@ -47,12 +38,6 @@ services:
     container_name: matching-engine
     depends_on:
       - mysql
-    environment:
-      - DB_USER=${ORDER_MANAGER_DB_USER}
-      - DB_PORT=${ORDER_MANAGER_DB_PORT}
-      - DB_PASSWORD=${ORDER_MANAGER_DB_PASSWORD}
-      - DB_DATABASE=${ORDER_MANAGER_DB_DATABASE}
-      - DB_HOST=${ORDER_MANAGER_DB_HOST}
     ports:
       - "3000:3000"
     networks:
@@ -64,12 +49,6 @@ services:
     container_name: market-data-publisher
     depends_on:
       - mysql
-    environment:
-      - DB_USER=${ORDER_MANAGER_DB_USER}
-      - DB_PORT=${ORDER_MANAGER_DB_PORT}
-      - DB_PASSWORD=${ORDER_MANAGER_DB_PASSWORD}
-      - DB_DATABASE=${ORDER_MANAGER_DB_DATABASE}
-      - DB_HOST=${ORDER_MANAGER_DB_HOST}
     ports:
       - "3000:3000"
     networks:

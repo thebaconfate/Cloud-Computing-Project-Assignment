@@ -1,22 +1,23 @@
+# Order manager manifest
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: cc-project-matching-engine
+  name: cc-project-market-data-publisher-deployment
   labels:
-    app: matching-engine
+    app: market-data-publisher
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: matching-engine
+      app: market-data-publisher
   template:
     metadata:
       labels:
-        app: matching-engine
+        app: market-data-publisher
     spec:
       containers:
-        - name: matching-engine
-          image: cc-project-matching-engine:latest
+        - name: market-data-publisher
+          image: cc-project-market-data-publisher:latest
           ports:
             -  containerPort: 3000
           env:
@@ -44,16 +45,19 @@ spec:
             limits:
               cpu: "500m"
               memory: "512Mi"
+
 ---
+# Order manager service
 apiVersion: v1
 kind: Service
 metadata:
-  name: matching-engine
+  name: market-data-publisher
 spec:
   selector:
-    app: matching-engine
+    app: market-data-publisher
   ports:
     - protocol: TCP
-      port: 3000
+      port: 3001
       targetPort: 3000
-  type: ClusterIP
+  type: LoadBalancer
+
