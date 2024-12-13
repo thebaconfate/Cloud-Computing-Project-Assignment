@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cc-project-exchange-dashboard
+  labels:
+    app: exchange-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: exchange-dashboard
+  template:
+    metadata:
+      labels:
+        app: exchange-dashboard
+    spec:
+      containers:
+        - name: exchange-dashboard
+          image: exchange-dashboard:latest
+          ports:
+            -  containerPort: 8080
+          imagePullPolicy: Never  # Use this for local images
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+# Load balancer for client gateway
+apiVersion: v1
+kind: Service
+metadata:
+  name: exchange-dashboard
+spec:
+  selector:
+    app: exchange-dashboard
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 80
+  type: LoadBalancer
+
+

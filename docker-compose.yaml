@@ -54,6 +54,17 @@ services:
     networks:
       - network
 
+  exchange-dashboard:
+    build:
+      context: ./exchange-dashboard
+    container_name: exchange-dashboard
+    depends_on:
+      - market-data-publisher
+    ports:
+      - "3000:80"
+    networks:
+      - network
+
 networks:
   network:
    driver: bridge
