@@ -42,38 +42,36 @@ async function restoreEngine() {
 
 async function handleExecutions(asks, bids) {
   if (asks.length === 0 && bids.length === 0) return;
-  const conn = await pool.getConnection();
   const totalExecs = asks.concat(bids);
-  conn.beginTransaction();
   const insertPlaceholders = totalExecs.map((_) => "(?, ?)").join(", ");
-  const query = `INSERT INTO executions (secnum, quantity) values ${insertPlaceholders}`;
+  const insertQuery = `INSERT INTO executions (secnum, quantity) values ${insertPlaceholders}`;
   const values = totalExecs.map((exec) => [exec.secnum, exec.quantity]);
   try {
-    conn.execute(query, values.flat()).then((_) => {
-      const query =
-        "UPDATE orders LEFT JOIN (" +
-        [
-          "SELECT executions.secnum",
-          "SUM(executions.quantity) as quantity",
-        ].join(", ") +
-        " " +
-        `FROM executions WHERE executions.secnum IN (?) ` +
-        "GROUP BY executions.secnum) AS execs " +
-        "ON orders.secnum = execs.secnum " +
-        "SET orders.filled = TRUE " +
-        "WHERE orders.quantity = execs.quantity " +
-        "AND execs.quantity IS NOT NULL " +
-        "AND orders.filled = FALSE";
-      const secnums = values.map((value) => value[0]);
-      conn.query(query, [secnums]).then((_) => {
-        conn.commit();
-      });
-    });
+    await pool.execute(insertQuery, values.flat());
+    const updateQuery =
+      "UPDATE orders LEFT JOIN (" +
+      ["SELECT executions.secnum", "SUM(executions.quantity) as quantity"].join(
+        ", ",
+      ) +
+      " " +
+      `FROM executions ` +
+      "GROUP BY executions.secnum) AS execs " +
+      "ON orders.secnum = execs.secnum " +
+      "SET orders.filled = TRUE " +
+      "WHERE orders.quantity = execs.quantity " +
+      "AND execs.quantity IS NOT NULL " +
+      "AND orders.filled = FALSE";
+    const secnums = values.map((value) => value[0]);
+    await pool.query(updateQuery);
+    const selectQuery =
+      "SELECT o.secnum, o.quantity, o.side, o.filled, o.symbol, " +
+      "COALESCE(SUM(e.quantity), 0) as filled_quantity FROM orders o " +
+      "INNER JOIN executions e ON o.secnum = e.secnum WHERE o.secnum " +
+      "in (?) " +
+      "GROUP BY o.secnum";
+    const [results] = await pool.query(selectQuery, [secnums]);
   } catch (e) {
     console.error(e);
-    await conn.rollback();
-  } finally {
-    conn.release();
   }
 }
 
@@ -97,8 +95,6 @@ function getTops() {
     return prev;
   }, new Set());
 }
-let restoredAsks = null;
-let restoredBids = null;
 
 fastify.post("/order", async (request, reply) => {
   const rawOrder = request.body;
@@ -112,89 +108,25 @@ fastify.post("/order", async (request, reply) => {
   const headers = { "Content-Type": "application/json" };
   const method = "POST";
   // handle if order is already in the engine
-  if (orderSet.has(order.secnum)) {
-    // if the engine was recently restored we need to return those executions too
-    if (restoredAsks || restoredBids) {
-      // need to create a copy due to it being used in a callback funtion
-      const asksCopy = restoredAsks;
-      const bidsCopy = restoredBids;
-      // point the restored execs to null so the main thread doesn't use it again
-      restoredBids = null;
-      restoredAsks = null;
-      const topSet = getTops();
-      await handleExecutions(asksCopy, bidsCopy);
-      removeFromSet(topSet, asksCopy);
-      removeFromSet(topSet, bidsCopy);
-      fetch(orderManagerUrl, {
-        method: method,
-        body: JSON.stringify(asksCopy.concat(bidsCopy)),
-        headers: headers,
-      }).catch((e) => {
-        console.error(e);
-      });
-    }
-    // else just return empty array, since no executions to return
-  } else {
+  if (orderSet.has(order.secnum)) return;
+  else {
     // if the order has not yet been placed
     orderSet.add(order.secnum);
-    // if the engine was recently restored
-    if (restoredAsks || restoredBids) {
-      const savedTopSet = getTops();
-      engine.execute(order, (asks, bids) => {
-        const toRemoveSecnums = restoredAsks
-          .reduce((prev, next) => {
-            if (!savedTopSet.has(next.secnum)) {
-              prev.push(next.secnum);
-            }
-            return prev;
-          }, [])
-          .concat(
-            restoredBids.reduce((prev, next) => {
-              if (!savedTopSet.has(next.secnum)) {
-                prev.push(next.secnum);
-              }
-              return prev;
-            }, []),
-          );
-        const totalAsks = asks.concat(restoredAsks);
-        const totalBids = bids.concat(restoredBids);
-        restoredAsks = null;
-        restoredBids = null;
-        const topSet = getTops();
-        handleExecutions(totalAsks, totalBids).then(() => {
-          toRemoveSecnums.forEach((secnum) => orderSet.delete(secnum));
-          removeFromSet(topSet, asks);
-          removeFromSet(topSet, bids);
-          fetch(orderManagerUrl, {
-            method: method,
-            body: JSON.stringify(totalAsks.concat(totalBids)),
-            headers: headers,
-          }).catch((e) => {
-            console.error(e);
-          });
+    engine.execute(order, (asks, bids) => {
+      if (asks.length === 0 && bids.length === 0) return;
+      const topSet = getTops();
+      handleExecutions(asks, bids).then(() => {
+        removeFromSet(topSet, asks);
+        removeFromSet(topSet, bids);
+        fetch(orderManagerUrl, {
+          method: method,
+          body: JSON.stringify(asks.concat(bids)),
+          headers: headers,
+        }).catch((e) => {
+          console.error(e);
         });
       });
-      // if engine wasn't restored recently
-    } else {
-      engine.execute(order, (asks, bids) => {
-        const topSet = getTops();
-        if (asks.length === 0 && bids.length === 0) {
-          return;
-        } else {
-          handleExecutions(asks, bids).then(() => {
-            removeFromSet(topSet, asks);
-            removeFromSet(topSet, bids);
-            fetch(orderManagerUrl, {
-              method: method,
-              body: JSON.stringify(asks.concat(bids)),
-              headers: headers,
-            }).catch((e) => {
-              console.error(e);
-            });
-          });
-        }
-      });
-    }
+    });
   }
 });
 
@@ -208,39 +140,67 @@ fastify.listen({ port: 3000, host: "0.0.0.0" }, (err, addr) => {
     process.exit(1);
   } else {
     console.log(`Server listening on port: ${addr}`);
-    restoreEngine()
-      .then((placedOrders) => {
-        placedOrders.forEach((placedOrder) => {
-          engine.execute(placedOrder, (asks, bids) => {
-            if (asks.length === 0 && bids.length === 0) {
-              return;
-            } else if (!restoredAsks || !restoredBids) {
-              restoredBids = bids;
-              restoredAsks = asks;
-            } else {
-              restoredAsks = restoredAsks.concat(asks);
-              restoredBids = restoredBids.concat(bids);
-            }
-          });
-        });
-      })
-      .then(() => {
-        if (restoredBids || restoredAsks) {
-          fetch(orderManagerUrl, {
-            body: JSON.stringify(restoredAsks.concat(restoredBids)),
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-          })
-            .then((response) => {
-              if (response.ok) {
-                restoredAsks = null;
-                restoredBids = null;
+    restoreEngine().then((placedOrders) => {
+      const asksMap = new Map();
+      const bidsMap = new Map();
+      placedOrders.forEach((placedOrder) => {
+        if (orderSet.has(placedOrder.secnum)) return;
+        else {
+          orderSet.add(placedOrder.secnum);
+          engine.execute(
+            {
+              secnum: placedOrder.secnum,
+              quantity: placedOrder.quantity - Number(placedOrder.filled),
+              side: placedOrder.side,
+              price: Number(placedOrder.price),
+              symbol: placedOrder.symbol,
+            },
+            (asks, bids) => {
+              if (asks.length === 0 && bids.length === 0) {
+                return;
+              } else {
+                asks.forEach((ask) => {
+                  const oldAsk = asksMap.get(ask.secnum);
+                  if (oldAsk)
+                    asksMap.set(ask.secnum, {
+                      ...oldAsk,
+                      quantity: oldAsk.quantity + ask.quantity,
+                    });
+                  else asksMap.set(ask.secnum, ask);
+                });
+                bids.forEach((bid) => {
+                  const oldBid = bidsMap.get(bid.secnum);
+                  if (oldBid)
+                    bidsMap.set(bid.secnum, {
+                      ...oldBid,
+                      quantity: oldBid.quantity + bid.quantity,
+                    });
+                  else bidsMap.set(bid.secnum, bid);
+                });
               }
-            })
-            .catch((e) => {
-              console.error(e);
-            });
+            },
+          );
         }
       });
+      const totalAsks = Array.from(asksMap.values());
+      const totalBids = Array.from(bidsMap.values());
+      handleExecutions(totalAsks, totalBids).then(() => {
+        const handleElement = (el) => {
+          const idx = placedOrders.findIndex((e) => e.secnum === el.secnum);
+          if (idx === -1)
+            throw Error(`Index not found for ${el.side} ${el.secnum}`);
+          const remainder =
+            placedOrders[idx].quantity - Number(placedOrders[idx].filled);
+          if (remainder === el.quantity) orderSet.delete(el.secnum);
+        };
+        totalAsks.forEach(handleElement);
+        totalBids.forEach(handleElement);
+        fetch(orderManagerUrl, {
+          method: "POST",
+          body: JSON.stringify(totalAsks.concat(totalBids)),
+          headers: { "Content-Type": "application/json" },
+        });
+      });
+    });
   }
 });

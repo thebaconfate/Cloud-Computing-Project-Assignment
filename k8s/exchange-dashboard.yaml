@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: exchange-dashboard
-          image: exchange-dashboard:latest
+          image: cc-project-exchange-dashboard:latest
           ports:
             -  containerPort: 8080
           imagePullPolicy: Never  # Use this for local images
