@@ -48,6 +48,7 @@ async function handleExecutions(asks, bids) {
   const values = totalExecs.map((exec) => [exec.secnum, exec.quantity]);
   let inserted = false;
   let updated = false;
+  // booleans to continue trying the queries if they happen to be rejected due to deadlocks
   while (!inserted) {
     try {
       await pool.execute(insertQuery, values.flat());
