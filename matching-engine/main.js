@@ -46,32 +46,38 @@ async function handleExecutions(asks, bids) {
   const insertPlaceholders = totalExecs.map((_) => "(?, ?)").join(", ");
   const insertQuery = `INSERT INTO executions (secnum, quantity) values ${insertPlaceholders}`;
   const values = totalExecs.map((exec) => [exec.secnum, exec.quantity]);
-  try {
-    await pool.execute(insertQuery, values.flat());
-    const updateQuery =
-      "UPDATE orders LEFT JOIN (" +
-      ["SELECT executions.secnum", "SUM(executions.quantity) as quantity"].join(
-        ", ",
-      ) +
-      " " +
-      `FROM executions ` +
-      "GROUP BY executions.secnum) AS execs " +
-      "ON orders.secnum = execs.secnum " +
-      "SET orders.filled = TRUE " +
-      "WHERE orders.quantity = execs.quantity " +
-      "AND execs.quantity IS NOT NULL " +
-      "AND orders.filled = FALSE";
-    const secnums = values.map((value) => value[0]);
-    await pool.query(updateQuery);
-    const selectQuery =
-      "SELECT o.secnum, o.quantity, o.side, o.filled, o.symbol, " +
-      "COALESCE(SUM(e.quantity), 0) as filled_quantity FROM orders o " +
-      "INNER JOIN executions e ON o.secnum = e.secnum WHERE o.secnum " +
-      "in (?) " +
-      "GROUP BY o.secnum";
-    const [results] = await pool.query(selectQuery, [secnums]);
-  } catch (e) {
-    console.error(e);
+  let inserted = false;
+  let updated = false;
+  while (!inserted) {
+    try {
+      await pool.execute(insertQuery, values.flat());
+      inserted = true;
+    } catch (e) {
+      console.error(e);
+      continue;
+    }
+  }
+  const updateQuery =
+    "UPDATE orders LEFT JOIN (" +
+    ["SELECT executions.secnum", "SUM(executions.quantity) as quantity"].join(
+      ", ",
+    ) +
+    " " +
+    `FROM executions ` +
+    "GROUP BY executions.secnum) AS execs " +
+    "ON orders.secnum = execs.secnum " +
+    "SET orders.filled = TRUE " +
+    "WHERE orders.quantity = execs.quantity " +
+    "AND execs.quantity IS NOT NULL " +
+    "AND orders.filled = FALSE";
+  while (!updated) {
+    try {
+      await pool.query(updateQuery);
+      updated = true;
+    } catch (e) {
+      console.error(e);
+      continue;
+    }
   }
 }
 
