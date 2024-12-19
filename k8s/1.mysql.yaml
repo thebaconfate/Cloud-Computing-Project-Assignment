@@ -33,6 +33,26 @@ spec:
     requests:
       storage: 3Gi
 ---
+# init script
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-init-script
+data:
+  init.sql: |
+    USE order_manager_db;
+
+    CREATE TABLE IF NOT EXISTS orders (
+      secnum INT AUTO_INCREMENT PRIMARY KEY,
+      timestamp DATETIME NOT NULL,
+      price DECIMAL(65, 2) NOT NULL,
+      symbol VARCHAR(255) NOT NULL,
+      quantity INT NOT NULL,
+      quantity_left INT NOT NULL,
+      side VARCHAR(255) NOT NULL,
+      CHECK (quantity_left >= 0)
+      );
+---
 # Deployment manifest
 apiVersion: apps/v1
 kind: Deployment
@@ -48,6 +68,15 @@ spec:
       labels:
         app: mysql-deployment
     spec:
+      initContainers:
+      - name: init-mysql-script
+        image: busybox
+        command: ['sh', '-c', 'cp /config/init.sql /docker-entrypoint-initdb.d/']
+        volumeMounts:
+        - name: init-script
+          mountPath: /config
+        - name: mysql-initdb
+          mountPath: /docker-entrypoint-initdb.d
       containers:
         - name: mysql-deployment
           image: mysql:8.0
@@ -67,6 +96,8 @@ spec:
           volumeMounts:
               - mountPath: /var/lib/mysql
                 name: mysql-storage
+              - mountPath: /docker-entrypoint-initdb.d
+                name: mysql-initdb
           resources:
             requests:
               cpu: "500m"
@@ -78,6 +109,11 @@ spec:
           - name: mysql-storage
             persistentVolumeClaim:
               claimName: mysql-pvc
+          - name: init-script
+            configMap:
+              name: mysql-init-script
+          - name: mysql-initdb
+            emptyDir: {}
 ---
 # Service manifest of the database
 apiVersion: v1
