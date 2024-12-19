@@ -1,6 +1,8 @@
 const { MatchingEngine, EngineOrder } = require("./engine");
 const Fastify = require("fastify");
 const mysql = require("mysql2/promise");
+const rxjs = require("rxjs");
+const Subject = rxjs.Subject;
 
 const dbCredentials = {
   host: process.env.DB_HOST,
@@ -29,56 +31,50 @@ async function restoreEngine() {
       "orders.symbol",
       "orders.side",
       "orders.price",
-      "orders.quantity",
-      "COALESCE(SUM(executions.quantity),0) as filled",
+      "orders.quantity_left as quantity",
     ].join(", ") +
     " " +
-    "FROM orders LEFT JOIN executions ON orders.secnum = executions.secnum " +
-    "WHERE orders.filled = FALSE " +
-    "GROUP BY orders.secnum";
+    "FROM orders " +
+    "WHERE orders.quantity_left > 0";
   const [rows] = await pool.query(query);
-  return rows;
+  return rows.map((el) => {
+    return {
+      ...el,
+      secnum: Number(el.secnum),
+      price: Number(el.price),
+      quantity: Number(el.quantity),
+    };
+  });
 }
 
-async function handleExecutions(asks, bids) {
-  if (asks.length === 0 && bids.length === 0) return;
-  const totalExecs = asks.concat(bids);
-  const insertPlaceholders = totalExecs.map((_) => "(?, ?)").join(", ");
-  const insertQuery = `INSERT INTO executions (secnum, quantity) values ${insertPlaceholders}`;
-  const values = totalExecs.map((exec) => [exec.secnum, exec.quantity]);
-  let inserted = false;
-  let updated = false;
-  // booleans to continue trying the queries if they happen to be rejected due to deadlocks
-  while (!inserted) {
-    try {
-      await pool.execute(insertQuery, values.flat());
-      inserted = true;
-    } catch (e) {
-      console.error(e);
-      continue;
-    }
-  }
-  const updateQuery =
-    "UPDATE orders LEFT JOIN (" +
-    ["SELECT executions.secnum", "SUM(executions.quantity) as quantity"].join(
-      ", ",
-    ) +
-    " " +
-    `FROM executions ` +
-    "GROUP BY executions.secnum) AS execs " +
-    "ON orders.secnum = execs.secnum " +
-    "SET orders.filled = TRUE " +
-    "WHERE orders.quantity = execs.quantity " +
-    "AND execs.quantity IS NOT NULL " +
-    "AND orders.filled = FALSE";
-  while (!updated) {
-    try {
-      await pool.query(updateQuery);
-      updated = true;
-    } catch (e) {
-      console.error(e);
-      continue;
-    }
+async function updateOrders(asks, bids) {
+  const execs = new Map();
+  const handleExec = (newExec) => {
+    const exec = execs.get(newExec.secnum);
+    if (exec) {
+      execs.set(exec.secnum, {
+        ...exec,
+        quantity: exec.quantity + newExec.quantity,
+      });
+    } else execs.set(newExec.secnum, newExec);
+  };
+  asks.forEach(handleExec);
+  bids.forEach(handleExec);
+  query =
+    "UPDATE orders SET quantity_left = quantity_left - ? WHERE secnum = ?";
+  const flattenedExecs = Array.from(execs.values());
+  try {
+    await Promise.all(
+      flattenedExecs.map((exec) => {
+        return pool.execute(query, [exec.quantity, exec.secnum]);
+      }),
+    );
+    return {
+      asks: flattenedExecs.filter((e) => e.side === "ask"),
+      bids: flattenedExecs.filter((e) => e.side === "bid"),
+    };
+  } catch (e) {
+    console.error(e);
   }
 }
 
@@ -86,6 +82,7 @@ const fastify = Fastify();
 const symbols = ["AAPL", "AMZN", "MSFT", "GOOGL"];
 const engine = new MatchingEngine(symbols);
 const orderSet = new Set();
+const orderFeeder = new Subject();
 
 function removeFromSet(topSet, array) {
   array.forEach((val) => {
@@ -103,7 +100,31 @@ function getTops() {
   }, new Set());
 }
 
-fastify.post("/order", async (request, reply) => {
+function handleExecutions(asks, bids) {
+  if (asks.length === 0 && bids.length === 0) return;
+  const tops = getTops();
+  updateOrders(asks, bids)
+    .then((execs) => {
+      removeFromSet(tops, execs.asks);
+      removeFromSet(tops, execs.bids);
+      fetch(orderManagerUrl, {
+        method: "POST",
+        body: JSON.stringify({ asks: execs.asks, bids: execs.bids }),
+        headers: { "Content-Type": "application/json" },
+      });
+    })
+    .catch((e) => {
+      console.error(e);
+    });
+}
+
+orderFeeder.subscribe((engineOrder) => {
+  if (orderSet.has(engineOrder.secnum)) return;
+  orderSet.add(engineOrder.secnum);
+  engine.execute(engineOrder, handleExecutions);
+});
+
+fastify.post("/order", async (request) => {
   const rawOrder = request.body;
   const order = new EngineOrder(
     rawOrder.symbol,
@@ -112,33 +133,12 @@ fastify.post("/order", async (request, reply) => {
     rawOrder.quantity,
     rawOrder.secnum,
   );
-  const headers = { "Content-Type": "application/json" };
-  const method = "POST";
-  // handle if order is already in the engine
-  if (orderSet.has(order.secnum)) return;
-  else {
-    // if the order has not yet been placed
-    orderSet.add(order.secnum);
-    engine.execute(order, (asks, bids) => {
-      if (asks.length === 0 && bids.length === 0) return;
-      const topSet = getTops();
-      handleExecutions(asks, bids).then(() => {
-        removeFromSet(topSet, asks);
-        removeFromSet(topSet, bids);
-        fetch(orderManagerUrl, {
-          method: method,
-          body: JSON.stringify(asks.concat(bids)),
-          headers: headers,
-        }).catch((e) => {
-          console.error(e);
-        });
-      });
-    });
-  }
+  orderFeeder.next(order);
+  return;
 });
 
 fastify.get("/", async (_, reply) => {
-  return reply.code(201).send("Engine available");
+  return reply.code(200).send("Engine available");
 });
 
 fastify.listen({ port: 3000, host: "0.0.0.0" }, (err, addr) => {
@@ -148,66 +148,17 @@ fastify.listen({ port: 3000, host: "0.0.0.0" }, (err, addr) => {
   } else {
     console.log(`Server listening on port: ${addr}`);
     restoreEngine().then((placedOrders) => {
-      const asksMap = new Map();
-      const bidsMap = new Map();
-      placedOrders.forEach((placedOrder) => {
-        if (orderSet.has(placedOrder.secnum)) return;
-        else {
-          orderSet.add(placedOrder.secnum);
-          engine.execute(
-            {
-              secnum: placedOrder.secnum,
-              quantity: placedOrder.quantity - Number(placedOrder.filled),
-              side: placedOrder.side,
-              price: Number(placedOrder.price),
-              symbol: placedOrder.symbol,
-            },
-            (asks, bids) => {
-              if (asks.length === 0 && bids.length === 0) {
-                return;
-              } else {
-                asks.forEach((ask) => {
-                  const oldAsk = asksMap.get(ask.secnum);
-                  if (oldAsk)
-                    asksMap.set(ask.secnum, {
-                      ...oldAsk,
-                      quantity: oldAsk.quantity + ask.quantity,
-                    });
-                  else asksMap.set(ask.secnum, ask);
-                });
-                bids.forEach((bid) => {
-                  const oldBid = bidsMap.get(bid.secnum);
-                  if (oldBid)
-                    bidsMap.set(bid.secnum, {
-                      ...oldBid,
-                      quantity: oldBid.quantity + bid.quantity,
-                    });
-                  else bidsMap.set(bid.secnum, bid);
-                });
-              }
-            },
-          );
-        }
-      });
-      const totalAsks = Array.from(asksMap.values());
-      const totalBids = Array.from(bidsMap.values());
-      handleExecutions(totalAsks, totalBids).then(() => {
-        const handleElement = (el) => {
-          const idx = placedOrders.findIndex((e) => e.secnum === el.secnum);
-          if (idx === -1)
-            throw Error(`Index not found for ${el.side} ${el.secnum}`);
-          const remainder =
-            placedOrders[idx].quantity - Number(placedOrders[idx].filled);
-          if (remainder === el.quantity) orderSet.delete(el.secnum);
-        };
-        totalAsks.forEach(handleElement);
-        totalBids.forEach(handleElement);
-        fetch(orderManagerUrl, {
-          method: "POST",
-          body: JSON.stringify(totalAsks.concat(totalBids)),
-          headers: { "Content-Type": "application/json" },
-        });
-      });
+      placedOrders.forEach((order) =>
+        orderFeeder.next(
+          new EngineOrder(
+            order.symbol,
+            order.side,
+            order.price,
+            order.quantity,
+            order.secnum,
+          ),
+        ),
+      );
     });
   }
 });
