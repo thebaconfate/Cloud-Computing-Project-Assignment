@@ -1,0 +1,47 @@
+\documentclass{article}
+%\documentclass{report} % Can be article, report, book, anything you want!
+
+\usepackage{vub} % this will automatically set to A4 paper. We're not in the US.
+% if, for some obscure reason, you need another format, please file an issue (see further).
+\usepackage{hyperref}
+
+% The `vub` package has many options.
+% Please read the documentation at https://gitlab.com/rubdos/texlive-vub if you want to learn about them.
+
+% Feel free to mix and match with other packages.
+
+\title{Cloud Computing Report}
+\faculty{Sciences and Bio-Engineering Sciences} % Note: without the word "Faculty"!
+\author{Gérard Lichtert \\
+0557513\\
+\href{mailto:gerard.lichtert@vub.be}{gerard.lichtert@vub.be}}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Architecture and choices}
+Prior to beginning with the actual components of the project there is some information that should be mentioned.
+All but the Matching engine use TypeScript, however it is compiled to JavaScript when containerized and all components but the Exchange Dashboard use Fastify for http communications.
+I chose Fastify because it is one of the fastest http libraries available in Node.
+I make use of a MySQL database to move the state from stateful applications to the database as well as keep track of the state of the orders.
+\subsection{Client Gateway}
+For the Client Gateway, as mentioned earlier, I use Fastify to create a http server. This libary also allows for requests to be pre-validated as they come in using fluent-json-schema, denoting the required types of the incoming request and returning a Bad Request response otherwise. The requests that are validated are forwarded to the Order Manager. Note that when the cluster is deployed, this application is scaled horizontally and is behind a load balancer to, well, balance the load between the pods.
+\subsection{Order Manager}
+To implement the Order Manager I made use of Fastify as my http server and I also make use of mysql2/promise, which is a library allowing me to connect to a database and execute queries asynchronously. When the Order Manager receives a request, it strips and inserts the order in the database. With the returned secnum of the order, the order is then forwarded to the Matching Engine as well as the Market Data Publisher. When the order is saved in the database, it returns a 201 response to the gateway, which returns the same status to the client.
+This application can also be horizontally scaled as its state is now delegated to the database.
+\subsection{Matching Engine}
+Just like the previous applications, the Matching Engine also makes use of the Fastify library to run a http server. This application is implemented in JavaScript because otherwise I had to do type gymnastics due to the Engine being implemented in JavaScript.
+The matching engine receives orders from the Order Manager sends it to a Subject, which in turn executes the order in the Engine,
+matching it with existing orders.
+Whenever orders are matched, it collects the executions, grouping them by secnum, updates the order in the database and sends these 'executions' to the Order Manager, which in turn forwards them to the Market Data Publisher.
+Since there is only one instance of the Matching Engine running, it has a recovery system, should it crash.
+It retrieves the unfullfilled orders and places them back in the subject, whilst keeping track of the orders currently in the Engine.
+Should an order be processed twice, it will not impact the state of the orders, since there's a constraint on the database keeping the amount left on the order in check.
+\subsection{Market Data Publisher}
+
+\subsection{Exchange Dashboard}
+\section{Deployment instructions}
+
+\end{document}
