@@ -1,5 +1,5 @@
 # Fdb version 4
-["pdflatex"] 1735541664.17938 "C:/Users/gerar/Documents/VUB/Mastervakken/Cloud-Computing-and-Big-Data-Processing/Cloud-Computing/project/report/main.tex" "main.pdf" "main" 1735541665.3731 0
+["pdflatex"] 1735620160.49355 "C:/Users/gerar/Documents/VUB/Mastervakken/Cloud-Computing-and-Big-Data-Processing/Cloud-Computing/project/report/main.tex" "main.pdf" "main" 1735620161.77932 0
   "C:/Users/gerar/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1735533917 121421 986c656c18d5dae14116b93751df729f ""
   "C:/Users/gerar/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1731193351 11985492 fde2129bd1b7707d50fa44dcfea6e43c ""
   "C:/Users/gerar/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/tex-gyre/q-ec.enc" 1525740614 2457 aaabbccba4df2a7f7371410ee4e075a3 ""
@@ -11,6 +11,7 @@
   "C:/Users/gerar/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx10.pfb" 1247596666 34811 78b52f49e893bcba91bd7581cdc144c0 ""
   "C:/Users/gerar/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx12.pfb" 1247596666 32080 340ef9bf63678554ee606688e7b5339d ""
   "C:/Users/gerar/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb" 1247596667 35752 024fb6c41858982481f6968b5fc26508 ""
+  "C:/Users/gerar/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb" 1247596667 32569 5e5ddc8df908dea60932f3c484a54c0d ""
   "C:/Users/gerar/AppData/Local/Programs/MiKTeX/fonts/type1/public/tex-gyre/qagb.pfb" 1525740614 212508 9c32ff3b86626360c0f7421ad38d17f0 ""
   "C:/Users/gerar/AppData/Local/Programs/MiKTeX/fonts/type1/public/tex-gyre/qagr.pfb" 1525740614 185863 ab0c0e913776b75f6171dc12b520187e ""
   "C:/Users/gerar/AppData/Local/Programs/MiKTeX/tex/context/base/mkii/supp-pdf.mkii" 1580390158 71627 94eb9990bed73c364d7f53f960cc8c5b ""
@@ -135,11 +136,11 @@
   "C:/Users/gerar/AppData/Local/Programs/MiKTeX/tex/latex/varwidth/varwidth.sty" 1238469540 10894 d359a13923460b2a73d4312d613554c8 ""
   "C:/Users/gerar/AppData/Local/Programs/MiKTeX/tex/latex/xcolor/xcolor.sty" 1729265222 55384 b454dec21c2d9f45ec0b793f0995b992 ""
   "C:/Users/gerar/AppData/Local/Programs/MiKTeX/tex/latex/xkeyval/xkeyval.sty" 1656236919 4937 4ce600ce9bd4ec84d0250eb6892fcf4f ""
-  "C:/Users/gerar/Documents/VUB/Mastervakken/Cloud-Computing-and-Big-Data-Processing/Cloud-Computing/project/report/main.tex" 1735541662 3735 7b8d1c4a5129e6b173ed949c11689281 ""
-  "main.aux" 1735541665 1056 039e1a63fe340c9fb85b04470172cdaf "pdflatex"
-  "main.out" 1735541665 1038 cca2bd324ae93ab2bd85e80ab02963d5 "pdflatex"
-  "main.tex" 1735541662 3735 7b8d1c4a5129e6b173ed949c11689281 ""
-  "main.toc" 1735541665 570 651e203df6c3fe01e4691fd69e5d1b4d "pdflatex"
+  "C:/Users/gerar/Documents/VUB/Mastervakken/Cloud-Computing-and-Big-Data-Processing/Cloud-Computing/project/report/main.tex" 1735620159 6977 c69136e2fc3c6ecc6d9388c4a10a8f38 ""
+  "main.aux" 1735620161 1056 4a804810bad3541c4afca766b4e1179c "pdflatex"
+  "main.out" 1735620161 1038 cca2bd324ae93ab2bd85e80ab02963d5 "pdflatex"
+  "main.tex" 1735620159 6977 c69136e2fc3c6ecc6d9388c4a10a8f38 ""
+  "main.toc" 1735620161 570 651e203df6c3fe01e4691fd69e5d1b4d "pdflatex"
   "vub.sty" 1735531360 2425 13e85d4232b22f4165278bf9b51f64cf ""
   "vub_logo_cmyk.pdf" 1735531360 17579 c14772a8039db1d46bbce1ddba3a9ba1 ""
   "vubprivate.sty" 1735531360 1471 addc750610fc9547bde6da7ffa8aca6f ""
