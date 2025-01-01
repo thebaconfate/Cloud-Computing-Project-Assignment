@@ -16,7 +16,7 @@ const agent = new http.Agent({
 const end_host = "127.0.0.1";
 const end_port = "3000";
 const end_path = "";
-const requestsPerSecond = 10;
+const requestsPerSecond = 20;
 
 const endpoint_url = `http://${end_host}:${end_port}/${end_path}`;
 

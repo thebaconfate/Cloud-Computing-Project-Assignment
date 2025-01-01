@@ -47,6 +47,7 @@ Should an order be processed twice, it will not impact the state of the orders, 
 \subsection{Market Data Publisher}
 The Market Data publisher also uses Fastify to host a http server.
 It also uses it to host a websocket connection using socket.io for real time updates to the Exchange Dashboard.
+I chose for socket.io as it allows for multiple clients to be connected to the publisher
 The Publisher holds rooms for each symbol of the stock, and thus emits events to their respective rooms.
 Whenever the publisher receives either a request for an order or an order-fill it sends it to a Subject, which checks the structure of the content and then emits the corresponding event.
 \par
