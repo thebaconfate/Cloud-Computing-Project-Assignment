@@ -28,6 +28,13 @@ Prior to beginning with the actual components of the project there is some infor
 All but the Matching engine use TypeScript, however it is transpiled to JavaScript when containerized and all components but the Exchange Dashboard use Fastify for http communications.
 I chose Fastify because it is one of the fastest http libraries available in Node and I wanted to get familiarized with it.
 I make use of a MySQL database to move the state from stateful applications to the database as well as keep track of the state of the orders.
+\par
+In regards to horizontal scaling: The Client Gateway and Order Manager can be scaled horizontally in my implementation.
+I tried horizontally scaling the engine as well but the amount of pods is limited in Windows.
+Were I to be able to deploy more pods, I would create an engine per symbol and direct the incoming request to the appropiate symbol.
+Were I to scale the Publisher, I would have to connect all publishers with each other to broadcast the incoming events, so they can be broadcasted as well.
+I saw no point in scaling the dashboard since it is served to the client in one request and only has one endpoint.
+Furthermore, the client then interacts with the publisher and not with the Nginx server that the dashboard is hosted on. More on that in section \ref{sec:dashboard}
 \subsection{Client Gateway}
 For the Client Gateway, as mentioned earlier, I use Fastify to create a http server.
 This libary also allows for requests to be pre-validated as they come in using fluent-json-schema, denoting the required types and other requirements of the incoming request and returning a Bad Request response otherwise.
@@ -54,6 +61,7 @@ Whenever the publisher receives either a request for an order or an order-fill i
 Note that when a client connects to the publisher, it queries the MySQL database for the current state of the engine for a specific symbol of a stock and then returns the data, along with the average per minute.
 The Publisher is also capable of querying the database to "restore" the status of a client, should it become inconsistent with the engine.
 \subsection{Exchange Dashboard}
+\label{sec:dashboard}
 The Exchange Dashboard is different from the other applications, as it does not use Fastify to host a http server.
 Instead it is a React application.
 I chose React as it is a good choice for dynamic front-end applications.
@@ -67,9 +75,9 @@ Furthermore The Exchange Dashboard is hosted on a Nginx server as this came reco
 \section{Deployment instructions}
 To deploy the cluster, first you need to build all the containers. For this you need to have docker-desktop running on windows or equivalent on other operating systems.
 For ease of use and to not build each container individually I created a docker-compose manifest.
-To use this execute the following command: \textbf{docker-compose build}. This should build all the containers. Afther it finishes we can start deploying the cluster.
+To use this execute the following command: \textbf{docker-compose build}. This should build all the containers. After it finishes we can start deploying the cluster.
 \par
-To deploy the cluster, I wrote a series of manifests located in the /k8s directory. It also includes manifests for automatic scaling.
+To deploy the cluster, I wrote a series of manifests located in the /k8s directory. It also includes manifests for automatic horizontal scaling.
 Whilst you can apply them all in one go I recommend applying the mysql manifest first, as the Engine will crash otherwise till the database is up and running.
 To do this first run: \textbf{kubectl apply -f ./k8s/1.mysql.yaml}.
 After running the command, wait about $\approx$ 30 seconds, and then apply the rest of the manifests.
