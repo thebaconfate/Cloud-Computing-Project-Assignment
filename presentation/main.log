@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (MiKTeX 24.4) (preloaded format=pdflatex 2024.11.10)  8 JAN 2025 07:41
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (MiKTeX 24.4) (preloaded format=pdflatex 2024.11.10)  8 JAN 2025 22:23
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1218,6 +1218,135 @@ Package varwidth Warning: Failed to reprocess entire contents on input line 40.
 [3
 
  <./images/technologies.drawio.png>]
+LaTeX Font Info:    Font shape `T1/Roboto-LF/m/n' aliased to
+(Font)              `T1/Roboto-LF/regular/n' on input line 46.
+LaTeX Font Info:    Font shape `T1/Roboto-LF/regular/n' will be
+(Font)              scaled to size 10.95pt on input line 46.
+LaTeX Font Info:    Font shape `T1/Roboto-LF/m/it' aliased to
+(Font)              `T1/Roboto-LF/regular/it' on input line 46.
+LaTeX Font Info:    Font shape `T1/Roboto-LF/regular/it' will be
+(Font)              scaled to size 10.95pt on input line 46.
+
+
+Package varwidth Warning: Failed to reprocess entire contents on input line 46.
+
+
+
+Package varwidth Warning: Failed to reprocess entire contents on input line 46.
+
+
+
+
+[4
+
+]
+
+Package varwidth Warning: Failed to reprocess entire contents on input line 53.
+
+
+
+Package varwidth Warning: Failed to reprocess entire contents on input line 53.
+
+
+
+
+[5
+
+]
+
+Package varwidth Warning: Failed to reprocess entire contents on input line 62.
+
+
+
+Package varwidth Warning: Failed to reprocess entire contents on input line 62.
+
+
+
+
+[6
+
+]
+
+Package varwidth Warning: Failed to reprocess entire contents on input line 71.
+
+
+
+Package varwidth Warning: Failed to reprocess entire contents on input line 71.
+
+
+
+
+[7
+
+]
+
+Package varwidth Warning: Failed to reprocess entire contents on input line 80.
+
+
+
+Package varwidth Warning: Failed to reprocess entire contents on input line 80.
+
+
+
+
+[8
+
+]
+<images/order-book.png, id=70, 281.55188pt x 153.57375pt>
+File: images/order-book.png Graphic file (type png)
+<use images/order-book.png>
+Package pdftex.def Info: images/order-book.png  used on input line 85.
+(pdftex.def)             Requested size: 307.28987pt x 167.62404pt.
+
+
+Package varwidth Warning: Failed to reprocess entire contents on input line 85.
+
+
+
+Package varwidth Warning: Failed to reprocess entire contents on input line 85.
+
+
+LaTeX Font Info:    Font shape `T1/Roboto-LF/l/n' aliased to
+(Font)              `T1/Roboto-LF/light/n' on input line 85.
+LaTeX Font Info:    Font shape `T1/Roboto-LF/light/n' will be
+(Font)              scaled to size 9.0pt on input line 85.
+
+
+[9
+
+ <./images/order-book.png>]
+<images/average-price.png, id=77, 281.55188pt x 138.5175pt>
+File: images/average-price.png Graphic file (type png)
+<use images/average-price.png>
+Package pdftex.def Info: images/average-price.png  used on input line 90.
+(pdftex.def)             Requested size: 307.28987pt x 151.1903pt.
+
+
+Package varwidth Warning: Failed to reprocess entire contents on input line 90.
+
+
+
+Package varwidth Warning: Failed to reprocess entire contents on input line 90.
+
+
+
+
+[10
+
+ <./images/average-price.png>]
+
+Package varwidth Warning: Failed to reprocess entire contents on input line 97.
+
+
+
+Package varwidth Warning: Failed to reprocess entire contents on input line 97.
+
+
+
+
+[11
+
+]
 \tf@nav=\write6
 \openout6 = `main.nav'.
 
@@ -1240,20 +1369,21 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 26103 strings out of 473702
- 522016 string characters out of 5719437
- 864589 words of memory out of 5000000
- 48603 multiletter control sequences out of 15000+600000
- 631345 words of font info for 73 fonts, out of 8000000 for 9000
+ 26198 strings out of 473702
+ 523958 string characters out of 5719437
+ 865592 words of memory out of 5000000
+ 48681 multiletter control sequences out of 15000+600000
+ 649979 words of font info for 83 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  128i,12n,123p,598b,978s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/gerar/AppData/Local/Programs/MiKTeX/fonts/type1/google/roboto/Robot
-o-Light.pfb><C:/Users/gerar/AppData/Local/Programs/MiKTeX/fonts/type1/public/te
-x-gyre/qagb.pfb><C:/Users/gerar/AppData/Local/Programs/MiKTeX/fonts/type1/publi
-c/tex-gyre/qagr.pfb>
-Output written on main.pdf (3 pages, 162416 bytes).
+o-Light.pfb><C:/Users/gerar/AppData/Local/Programs/MiKTeX/fonts/type1/public/am
+sfonts/symbols/msam10.pfb><C:/Users/gerar/AppData/Local/Programs/MiKTeX/fonts/t
+ype1/public/tex-gyre/qagb.pfb><C:/Users/gerar/AppData/Local/Programs/MiKTeX/fon
+ts/type1/public/tex-gyre/qagr.pfb>
+Output written on main.pdf (11 pages, 258752 bytes).
 PDF statistics:
- 62 PDF objects out of 1000 (max. 8388607)
- 7 named destinations out of 1000 (max. 500000)
- 64 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 115 PDF objects out of 1000 (max. 8388607)
+ 23 named destinations out of 1000 (max. 500000)
+ 74 words of extra memory for PDF output out of 10000 (max. 10000000)
 

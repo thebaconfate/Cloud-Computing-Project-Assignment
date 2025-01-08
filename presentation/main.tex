@@ -38,4 +38,61 @@
 		\includegraphics[width=\textwidth]{technologies.drawio.png}
 	\end{figure}
 \end{frame}
+\begin{frame}{Validator}
+	\begin{itemize}
+		\item Uses fluent-json-schema to pre-validate incoming requests
+		\item Forwards validated requests to Order Manager rejects otherwise
+	\end{itemize}
+\end{frame}
+\begin{frame}{Order Manager}
+	\begin{itemize}
+		\item Uses mysql2/promise to store orders
+		\item Forwards orders to Market Data Publisher and Matching Machine
+		\item Forwards executions to Market Data Publisher
+	\end{itemize}
+\end{frame}
+\begin{frame}{Matching engine}
+	\begin{itemize}
+		\item Stores open orders locally
+		\item Processes orders using Rxjs
+		\item Finds matches
+		\item Updates remaining quantity in orders (MySQL)
+		\item Sends reduced executions to Order Manager
+	\end{itemize}
+\end{frame}
+\begin{frame}{Market Data Publisher}
+	\begin{itemize}
+		\item Uses Socket.IO to connect to clients
+		\item Uses Rxjs to process orders and executions
+		\item Forwards orders and executions to clients subscribed to a symbol
+		\item Can read from database to send current data to a client
+		\item Computes average price each minute
+	\end{itemize}
+\end{frame}
+\begin{frame}{Exchange Dashboard}
+	\begin{itemize}
+		\item React application
+		\item Uses React's virtual DOM to update UI
+		\item Uses a react port of chart.js to display graphs
+		\item Uses Socket.IO to subscribe to a symbol and handle events
+		\item Can correct local data if it becomes inconsistent
+	\end{itemize}
+\end{frame}
+\begin{frame}{Exchange Dashboard}{Order Book}
+	\begin{figure}
+		\includegraphics[width=\textwidth]{order-book.png}
+	\end{figure}
+\end{frame}
+\begin{frame}{Exchange Dashboard}{Average price}
+	\begin{figure}
+		\includegraphics[width=\textwidth]{average-price.png}
+	\end{figure}
+\end{frame}
+\begin{frame}{Demo}
+	Timestamps:
+	\begin{itemize}
+		\item Start descaling 6:40
+		\item Actual descaling: 11:10
+	\end{itemize}
+\end{frame}
 \end{document}
