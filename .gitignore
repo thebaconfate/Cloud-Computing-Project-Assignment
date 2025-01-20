@@ -5,3 +5,7 @@ node_modules/
 *.log
 *.nav
 *.tex
+*.fdb_latexmk
+*.fls
+*.out
+*.toc
